@@ -1,4 +1,11 @@
-platform :ios, '15.0'
+require Pod::Executable.execute_command('node', ['-p',
+  'require.resolve(
+    "react-native/scripts/react_native_pods.rb",
+    {paths: [process.argv[1]]},
+  )', __dir__]).strip
+prepare_react_native_project!
+
+platform :ios, 15.1
 
 use_frameworks!
 
@@ -60,7 +67,8 @@ end
 
 target 'Signal' do
   project 'Signal.xcodeproj', 'Debug' => :debug, 'Release' => :release
-
+  use_native_modules!
+  use_react_native!
   # Pods only available inside the main Signal app
   ui_pods
 
@@ -95,6 +103,7 @@ target 'SignalNSE' do
 end
 
 post_install do |installer|
+  react_native_post_install(installer)
   enable_strip(installer)
   enable_extension_support_for_purelayout(installer)
   configure_warning_flags(installer)

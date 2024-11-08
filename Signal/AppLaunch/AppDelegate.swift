@@ -9,6 +9,7 @@ import Intents
 import SignalServiceKit
 import SignalUI
 import WebRTC
+import React_RCTAppDelegate
 
 enum LaunchPreflightError {
     case unknownDatabaseVersion
@@ -62,7 +63,7 @@ private func uncaughtExceptionHandler(_ exception: NSException) {
 }
 
 @main
-final class AppDelegate: UIResponder, UIApplicationDelegate {
+final class AppDelegate: RCTAppDelegate {
     // MARK: - Constants
 
     private enum Constants {
@@ -71,11 +72,23 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - Lifecycle
 
-    func applicationWillEnterForeground(_ application: UIApplication) {
+    override func sourceURL(for bridge: RCTBridge) -> URL? {
+        self.bundleURL()
+    }
+    
+    override func bundleURL() -> URL? {
+        #if DEBUG
+            RCTBundleURLProvider.sharedSettings().jsBundleURL(forBundleRoot: "index")
+        #else
+            Bundle.main.url(forResource: "main", withExtension: "jsbundle")
+        #endif
+    }
+    
+    override func applicationWillEnterForeground(_ application: UIApplication) {
         Logger.info("")
     }
 
-    func applicationDidBecomeActive(_ application: UIApplication) {
+    override func applicationDidBecomeActive(_ application: UIApplication) {
         AssertIsOnMainThread()
         if CurrentAppContext().isRunningTests {
             return
@@ -104,7 +117,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private let flushQueue = DispatchQueue(label: "org.signal.flush", qos: .utility)
 
-    func applicationWillResignActive(_ application: UIApplication) {
+    override func applicationWillResignActive(_ application: UIApplication) {
         AssertIsOnMainThread()
 
         if didAppLaunchFail {
@@ -122,7 +135,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
-    func applicationDidEnterBackground(_ application: UIApplication) {
+    override func applicationDidEnterBackground(_ application: UIApplication) {
         Logger.info("")
 
         if shouldKillAppWhenBackgrounded {
@@ -131,11 +144,11 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         }
     }
 
-    func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
+    override func applicationDidReceiveMemoryWarning(_ application: UIApplication) {
         Logger.info("")
     }
 
-    func applicationWillTerminate(_ application: UIApplication) {
+    override func applicationWillTerminate(_ application: UIApplication) {
         Logger.info("")
         Logger.flush()
     }
@@ -144,10 +157,12 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     private lazy var appReadiness = AppReadinessImpl()
 
-    func application(
+    override func application(
         _ application: UIApplication,
         didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil
     ) -> Bool {
+        self.automaticallyLoadReactNativeWindow = false
+        super.application(application, didFinishLaunchingWithOptions: launchOptions)
         let launchStartedAt = CACurrentMediaTime()
 
         NSSetUncaughtExceptionHandler(uncaughtExceptionHandler(_:))
@@ -325,8 +340,6 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         self.launchApp(in: window, launchContext: launchContext)
         return true
     }
-
-    var window: UIWindow?
 
     private func initializeWindow(mainAppContext: MainAppContext, rootViewController: UIViewController) -> UIWindow {
         let window = OWSWindow()
@@ -1209,7 +1222,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - Orientation
 
-    func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
+    override func application(_ application: UIApplication, supportedInterfaceOrientationsFor window: UIWindow?) -> UIInterfaceOrientationMask {
         if CurrentAppContext().isRunningTests || didAppLaunchFail {
             return .portrait
         }
@@ -1219,7 +1232,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
             return .portrait
         }
 
-        guard let rootViewController = self.window?.rootViewController else {
+        guard let rootViewController = self.window.rootViewController else {
             return UIDevice.current.defaultSupportedOrientations
         }
 
@@ -1228,7 +1241,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - Notifications
 
-    func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
+    override func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         AssertIsOnMainThread()
 
         if didAppLaunchFail {
@@ -1239,7 +1252,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         AppEnvironment.shared.pushRegistrationManagerRef.didReceiveVanillaPushToken(deviceToken)
     }
 
-    func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
+    override func application(_ application: UIApplication, didFailToRegisterForRemoteNotificationsWithError error: Error) {
         AssertIsOnMainThread()
 
         if didAppLaunchFail {
@@ -1254,7 +1267,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
         #endif
     }
 
-    func application(
+    override func application(
         _ application: UIApplication,
         didReceiveRemoteNotification userInfo: [AnyHashable: Any],
         fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void
@@ -1345,7 +1358,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
     /// If you do not implement this method or if your implementation returns
     /// false, iOS tries to create a document for your app to open using a URL.
     @available(iOS, deprecated: 13.0) // hack to mute deprecation warnings; this is not deprecated
-    func application(
+    override func application(
         _ application: UIApplication,
         continue userActivity: NSUserActivity,
         restorationHandler: @escaping ([UIUserActivityRestoring]?) -> Void
@@ -1492,7 +1505,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - Shortcut Items
 
-    func application(
+    override func application(
         _ application: UIApplication,
         performActionFor shortcutItem: UIApplicationShortcutItem,
         completionHandler: @escaping (Bool) -> Void
@@ -1542,7 +1555,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
 
     // MARK: - URL Handling
 
-    func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
+    override func application(_ app: UIApplication, open url: URL, options: [UIApplication.OpenURLOptionsKey: Any] = [:]) -> Bool {
         AssertIsOnMainThread()
         return handleOpenUrl(url)
     }
@@ -1565,7 +1578,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                 tsAccountManager: DependenciesBridge.shared.tsAccountManager
             )
 
-            urlOpener.openUrl(parsedUrl, in: self.window!)
+            urlOpener.openUrl(parsedUrl, in: self.window)
         }
         return true
     }

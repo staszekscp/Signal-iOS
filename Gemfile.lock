@@ -290,10 +290,12 @@ PLATFORMS
   ruby
 
 DEPENDENCIES
+  activesupport (>= 6.1.7.5, != 7.1.0)
   anbt-sql-formatter
-  cocoapods
+  cocoapods (>= 1.13, != 1.15.1, != 1.15.0)
   fastlane
   xcode-install
+  xcodeproj (< 1.26.0)
 
 BUNDLED WITH
    2.5.6

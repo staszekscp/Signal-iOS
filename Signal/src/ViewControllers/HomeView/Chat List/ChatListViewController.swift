@@ -6,6 +6,7 @@
 import SignalServiceKit
 public import SignalUI
 import StoreKit
+import React_RCTAppDelegate
 
 public class ChatListViewController: OWSViewController, HomeTabViewController {
     let appReadiness: AppReadinessSetter
@@ -621,20 +622,10 @@ public class ChatListViewController: OWSViewController, HomeTabViewController {
         // Dismiss any message actions if they're presented
         conversationSplitViewController?.selectedConversationViewController?.dismissMessageContextMenu(animated: true)
 
-        let viewController = ComposeViewController()
-        SSKEnvironment.shared.contactManagerImplRef.requestSystemContactsOnce { error in
-            if let error {
-                Logger.error("Error when requesting contacts: \(error)")
-            }
-
-            // Even if there is an error fetching contacts we proceed to the next screen.
-            // As the compose view will present the proper thing depending on contact access.
-            //
-            // We just want to make sure contact access is *complete* before showing the compose
-            // screen to avoid flicker.
-            let modal = OWSNavigationController(rootViewController: viewController)
-            self.navigationController?.presentFormSheet(modal, animated: true)
-        }
+        let reactNativeViewController = UIViewController()
+        let factory = (UIApplication.shared.delegate as! RCTAppDelegate).rootViewFactory
+        reactNativeViewController.view = factory.view(withModuleName: "HelloBrownfield")
+        self.present(reactNativeViewController, animated: true)
     }
 
     func showNewGroupView() {
