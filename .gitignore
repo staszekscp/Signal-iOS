@@ -13,6 +13,9 @@ build/*
 # Exclude user-specific XCode 3 and 4 files
 xcuserdata
 *.xccheckout
+.xcode.env.local
+
+Pods/
 
 *.pbxuser
 !default.pbxuser
